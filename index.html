@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Shift Report Generator</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<meta name="theme-color" content="#171a21">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shift Report">
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel2: #1e222b;
+    --border: #2a2f3a;
+    --text: #e6e8eb;
+    --muted: #9aa1ac;
+    --accent: #4f8cff;
+    --accent2: #3a6fd8;
+    --danger: #e5484d;
+    --success: #2fb344;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    line-height: 1.4;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 14px; color: var(--accent); }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) {
+    body { padding: 12px; }
+    .card { padding: 14px; }
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  input[type=text], input[type=date], input[type=password], textarea, select {
+    width: 100%;
+    max-width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 10px 10px;
+    font-size: 16px;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .field { margin-bottom: 12px; }
+  .entry {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .entry-header strong { font-size: 13px; }
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn:hover { background: var(--accent2); }
+  .btn.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn.secondary:hover { border-color: var(--accent); }
+  .btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 4px 10px; font-size: 12px; }
+  .btn.danger:hover { background: rgba(229,72,77,0.1); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .photo-drop {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .photo-drop:hover { border-color: var(--accent); color: var(--text); }
+  .thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .thumb {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .rm {
+    position: absolute;
+    top: 2px; right: 2px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    width: 18px; height: 18px;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .footer-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  #status {
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  #status.ok { color: var(--success); }
+  #status.err { color: var(--danger); }
+  .preview {
+    background: #fff;
+    color: #111;
+    border-radius: var(--radius);
+    padding: 20px;
+    font-size: 14px;
+  }
+  .preview h3 { margin-top: 0; }
+  .preview .entry-block { border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; }
+  .preview img { max-width: 160px; margin: 4px 6px 4px 0; border-radius: 4px; border: 1px solid #ccc; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+
+<div id="lockScreen" style="position:fixed;inset:0;background:#0f1115;display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;">
+  <div style="background:#171a21;border:1px solid #2a2f3a;border-radius:10px;padding:28px;width:100%;max-width:280px;text-align:center;box-sizing:border-box;">
+    <div style="font-size:28px;margin-bottom:8px;">🔒</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:14px;color:#e6e8eb;">Shift Report — Locked</div>
+    <input type="password" id="lockPassword" placeholder="Enter password"
+      style="width:100%;background:#1e222b;border:1px solid #2a2f3a;color:#e6e8eb;border-radius:6px;padding:10px 10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;">
+    <button onclick="tryUnlock()" style="width:100%;background:#4f8cff;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">Unlock</button>
+    <div id="lockError" style="color:#e5484d;font-size:12px;margin-top:8px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+<div class="container">
+  <h1>Shift Report — Email Generator</h1>
+  <div class="sub">Log everything from your shift — collision calls, weld modifications, repairs, and more — attach photos per entry, then export directly to an email you can send.</div>
+
+  <div class="card">
+    <h2>Report Details</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Report Title / Subject</label>
+        <input type="text" id="reportTitle" placeholder="e.g. Robotic Weld Cell #4 — Repair Report">
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="reportDate">
+      </div>
+      <div class="field">
+        <label>System / Cell Number</label>
+        <input type="text" id="systemNumber" placeholder="e.g. RWC-04">
+      </div>
+      <div class="field">
+        <label>Prepared By</label>
+        <input type="text" id="preparedBy" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label>Send To (email)</label>
+        <input type="text" id="toEmail" placeholder="recipient@example.com">
+      </div>
+      <div class="field">
+        <label>CC (optional)</label>
+        <input type="text" id="ccEmail" placeholder="cc@example.com">
+      </div>
+    </div>
+    <div class="field">
+      <label>General Notes</label>
+      <textarea id="generalNotes" placeholder="Overall summary or context for this report..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Entries</h2>
+    <div id="entriesContainer"></div>
+    <button class="btn secondary" onclick="addEntry()">+ Add Entry</button>
+  </div>
+
+  <div class="card">
+    <h2>Summary of Calls Answered</h2>
+    <div class="field">
+      <label>Where</label>
+      <textarea id="sumWhere" placeholder="Locations/areas visited during calls..."></textarea>
+    </div>
+    <div class="field">
+      <label>Why</label>
+      <textarea id="sumWhy" placeholder="Reason(s) you were called out..."></textarea>
+    </div>
+    <div class="field">
+      <label>Issues Observed</label>
+      <textarea id="sumIssues" placeholder="What you found/observed..."></textarea>
+    </div>
+    <div class="field">
+      <label>Corrective Actions Taken</label>
+      <textarea id="sumActions" placeholder="What was done to resolve it..."></textarea>
+    </div>
+    <div class="field">
+      <label>Are fab processes or plate conditions contributing to these issues?</label>
+      <select id="sumContributing" onchange="toggleContributingFollowup()">
+        <option value="">Select...</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+    </div>
+    <div class="field" id="contributingFollowupField" style="display:none; padding-left:14px; border-left:2px solid var(--border);">
+      <label>If yes — was this communicated to line leads/supervisors, and an NCR/Weld Report written to document the issue?</label>
+      <select id="sumContributingFollowup">
+        <option value="">Select...</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+      <div class="field" style="margin-top:10px;">
+        <label>NCR / Weld Report # <span style="opacity:.6">(if applicable)</span></label>
+        <input type="text" id="sumNcrNumber" placeholder="e.g. NCR-4521">
+      </div>
+    </div>
+    <div class="field">
+      <label>Any Other Details That Should Be Passed Along</label>
+      <textarea id="sumOtherDetails" placeholder="Anything else worth noting..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Programming and Projects Updates</h2>
+    <div class="field">
+      <label>Work Performed</label>
+      <textarea id="progWork" placeholder="What you worked on..."></textarea>
+    </div>
+    <div class="field">
+      <label>Issues Encountered</label>
+      <textarea id="progIssues" placeholder="Any problems or blockers..."></textarea>
+    </div>
+    <div class="field">
+      <label>Items / Resources Needed</label>
+      <textarea id="progNeeds" placeholder="Anything needed to keep progress moving..."></textarea>
+    </div>
+    <div class="field">
+      <label>Ideas for Improvements</label>
+      <textarea id="progIdeas" placeholder="Suggestions, ideas, things worth trying..."></textarea>
+    </div>
+    <div class="field">
+      <label>Etc.</label>
+      <textarea id="progEtc" placeholder="Anything else..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Export</h2>
+    <div class="footer-actions">
+      <button class="btn" onclick="exportEml()">📧 Export Email (.eml, with photos)</button>
+      <button class="btn secondary" onclick="openMailto()">✉️ Open in Mail App (text only)</button>
+      <button class="btn secondary" onclick="renderPreview()">👁 Preview Report</button>
+      <button class="btn secondary" onclick="clearAll()">🗑 Clear / Start New Shift</button>
+    </div>
+    <div class="hint">
+      The .eml file contains the full report with embedded photos as real attachments. Double-click it to open
+      in Mail, Outlook, or Thunderbird — it opens as a ready-to-send message. "Open in Mail App" uses your
+      system default mail link but cannot attach photos (a mailto: limitation).
+    </div>
+    <div id="status"></div>
+    <div id="autosaveIndicator" class="hint" style="margin-top:4px;"></div>
+  </div>
+
+  <div class="card" id="previewCard" style="display:none;">
+    <h2>Preview</h2>
+    <div class="preview" id="previewContent"></div>
+  </div>
+</div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" multiple>
+
+<script>
+// --- Simple password gate (deterrent only, not real security — anyone who views
+// the page source can see this is a hash check and could work around it) ---
+const UNLOCK_KEY = 'shiftReportUnlocked';
+// SHA-256 hash of the password. Change PASSWORD_HASH by generating a new hash
+// (see instructions below the file) rather than storing the plaintext here.
+const PASSWORD_HASH = 'REPLACE_WITH_YOUR_HASH';
+
+async function sha256(text) {
+  const data = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function tryUnlock() {
+  const input = document.getElementById('lockPassword').value;
+  const hash = await sha256(input);
+  if (hash === PASSWORD_HASH) {
+    sessionStorage.setItem(UNLOCK_KEY, '1');
+    showApp();
+  } else {
+    document.getElementById('lockError').textContent = 'Incorrect password.';
+  }
+}
+
+function showApp() {
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+}
+
+document.getElementById('lockPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryUnlock();
+});
+
+if (sessionStorage.getItem(UNLOCK_KEY) === '1') {
+  showApp();
+}
+
+let entries = [];
+let entryIdCounter = 0;
+let activeEntryForUpload = null;
+
+function newEntry() {
+  entryIdCounter++;
+  return { id: entryIdCounter, system: '', description: '', partNumbers: '', serialNumbers: '', notes: '', photos: [] };
+}
+
+function addEntry() {
+  entries.push(newEntry());
+  renderEntries();
+  scheduleAutosave();
+}
+
+function removeEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  renderEntries();
+  scheduleAutosave();
+}
+
+function updateEntryField(id, field, value) {
+  const e = entries.find(x => x.id === id);
+  if (e) e[field] = value;
+}
+
+function refreshEntryHeader(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  const idx = entries.indexOf(e);
+  const headerEl = document.querySelectorAll('.entry .entry-header strong')[idx];
+  if (headerEl) headerEl.textContent = `Entry ${idx + 1}${e.system ? ' — ' + e.system : ''}`;
+}
+
+function triggerUpload(id) {
+  activeEntryForUpload = id;
+  document.getElementById('fileInput').click();
+}
+
+function removePhoto(entryId, photoIndex) {
+  const e = entries.find(x => x.id === entryId);
+  if (e) {
+    e.photos.splice(photoIndex, 1);
+    renderEntries();
+    scheduleAutosave();
+  }
+}
+
+document.getElementById('fileInput').addEventListener('change', function(evt) {
+  const files = Array.from(evt.target.files || []);
+  const e = entries.find(x => x.id === activeEntryForUpload);
+  if (!e || files.length === 0) return;
+
+  let remaining = files.length;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      e.photos.push({ name: file.name, dataUrl: ev.target.result, type: file.type });
+      remaining--;
+      if (remaining === 0) { renderEntries(); scheduleAutosave(); }
+    };
+    reader.readAsDataURL(file);
+  });
+  evt.target.value = '';
+});
+
+function renderEntries() {
+  const container = document.getElementById('entriesContainer');
+  container.innerHTML = '';
+
+  if (entries.length === 0) {
+    entries.push(newEntry());
+  }
+
+  entries.forEach((e, idx) => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = `
+      <div class="entry-header">
+        <strong>Entry ${idx + 1}${e.system ? ' — ' + escapeHtml(e.system) : ''}</strong>
+        ${entries.length > 1 ? `<button class="btn danger" onclick="removeEntry(${e.id})">Remove</button>` : ''}
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>System</label>
+          <input type="text" value="${escapeAttr(e.system)}" placeholder="e.g. T2, M2"
+            oninput="updateEntryField(${e.id}, 'system', this.value); refreshEntryHeader(${e.id});">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input type="text" value="${escapeAttr(e.description)}" placeholder="e.g. Miss sensing issue due to cover lid being pulled"
+            oninput="updateEntryField(${e.id}, 'description', this.value)">
+        </div>
+        <div class="field">
+          <label>Part Number(s) <span style="opacity:.6">(if applicable)</span></label>
+          <input type="text" value="${escapeAttr(e.partNumbers)}" placeholder="e.g. 123456"
+            oninput="updateEntryField(${e.id}, 'partNumbers', this.value)">
+        </div>
+        <div class="field">
+          <label>Serial Number(s) <span style="opacity:.6">(if applicable)</span></label>
+          <input type="text" value="${escapeAttr(e.serialNumbers)}" placeholder="e.g. 123456"
+            oninput="updateEntryField(${e.id}, 'serialNumbers', this.value)">
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes <span style="opacity:.6">(optional)</span></label>
+        <textarea placeholder="Additional details, if any..."
+          oninput="updateEntryField(${e.id}, 'notes', this.value)">${escapeHtml(e.notes)}</textarea>
+      </div>
+      <div class="field">
+        <label>Photos</label>
+        <div class="photo-drop" onclick="triggerUpload(${e.id})">📷 Click to attach photo(s)</div>
+        <div class="thumbs" id="thumbs-${e.id}"></div>
+      </div>
+    `;
+    container.appendChild(div);
+
+    const thumbsDiv = div.querySelector(`#thumbs-${e.id}`);
+    e.photos.forEach((p, pIdx) => {
+      const t = document.createElement('div');
+      t.className = 'thumb';
+      t.innerHTML = `<img src="${p.dataUrl}"><button class="rm" onclick="removePhoto(${e.id}, ${pIdx})">✕</button>`;
+      thumbsDiv.appendChild(t);
+    });
+  });
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
+}
+
+function getReportData() {
+  return {
+    title: document.getElementById('reportTitle').value || 'Report',
+    date: document.getElementById('reportDate').value,
+    systemNumber: document.getElementById('systemNumber').value,
+    preparedBy: document.getElementById('preparedBy').value,
+    toEmail: document.getElementById('toEmail').value,
+    ccEmail: document.getElementById('ccEmail').value,
+    generalNotes: document.getElementById('generalNotes').value,
+    entries: entries,
+    summary: {
+      where: document.getElementById('sumWhere').value,
+      why: document.getElementById('sumWhy').value,
+      issues: document.getElementById('sumIssues').value,
+      actions: document.getElementById('sumActions').value,
+      contributing: document.getElementById('sumContributing').value,
+      contributingFollowup: document.getElementById('sumContributingFollowup').value,
+      ncrNumber: document.getElementById('sumNcrNumber').value,
+      otherDetails: document.getElementById('sumOtherDetails').value
+    },
+    programming: {
+      work: document.getElementById('progWork').value,
+      issues: document.getElementById('progIssues').value,
+      needs: document.getElementById('progNeeds').value,
+      ideas: document.getElementById('progIdeas').value,
+      etc: document.getElementById('progEtc').value
+    }
+  };
+}
+
+function toggleContributingFollowup() {
+  const val = document.getElementById('sumContributing').value;
+  document.getElementById('contributingFollowupField').style.display = (val === 'Yes') ? 'block' : 'none';
+}
+
+function entryHeaderText(e) {
+  const sys = (e.system || '').trim();
+  const desc = (e.description || '').trim();
+  if (sys && desc) return `${sys} - ${desc}`;
+  if (sys) return sys;
+  return desc || '(no description)';
+}
+
+function entryPartSerialLine(e) {
+  const parts = [];
+  if (e.partNumbers && e.partNumbers.trim()) parts.push(`Part #: ${e.partNumbers.trim()}`);
+  if (e.serialNumbers && e.serialNumbers.trim()) parts.push(`Serial#: ${e.serialNumbers.trim()}`);
+  return parts.length ? parts.join(' ') : null;
+}
+
+function getSummaryFields(data) {
+  const s = data.summary || {};
+  const lines = [];
+  if (s.where && s.where.trim()) lines.push(['Where', s.where.trim()]);
+  if (s.why && s.why.trim()) lines.push(['Why', s.why.trim()]);
+  if (s.issues && s.issues.trim()) lines.push(['Issues Observed', s.issues.trim()]);
+  if (s.actions && s.actions.trim()) lines.push(['Corrective Actions Taken', s.actions.trim()]);
+  if (s.contributing) {
+    lines.push(['Are fab processes or plate conditions contributing to these issues?', s.contributing]);
+    if (s.contributing === 'Yes') {
+      if (s.contributingFollowup) lines.push(['Communicated to line leads/supervisors & NCR/Weld Report written?', s.contributingFollowup]);
+      if (s.ncrNumber && s.ncrNumber.trim()) lines.push(['NCR/Weld Report #', s.ncrNumber.trim()]);
+    }
+  }
+  if (s.otherDetails && s.otherDetails.trim()) lines.push(['Other Details', s.otherDetails.trim()]);
+  return lines;
+}
+
+function getProgrammingFields(data) {
+  const p = data.programming || {};
+  const lines = [];
+  if (p.work && p.work.trim()) lines.push(['Work Performed', p.work.trim()]);
+  if (p.issues && p.issues.trim()) lines.push(['Issues Encountered', p.issues.trim()]);
+  if (p.needs && p.needs.trim()) lines.push(['Items/Resources Needed', p.needs.trim()]);
+  if (p.ideas && p.ideas.trim()) lines.push(['Ideas for Improvements', p.ideas.trim()]);
+  if (p.etc && p.etc.trim()) lines.push(['Etc', p.etc.trim()]);
+  return lines;
+}
+
+function buildPlainTextBody(data) {
+  let body = `${data.title}\n`;
+  body += `Date: ${data.date || '(not set)'}\n`;
+  if (data.systemNumber) body += `System Number: ${data.systemNumber}\n`;
+  body += `Prepared By: ${data.preparedBy || '(none)'}\n\n`;
+  if (data.generalNotes) body += `General Notes:\n${data.generalNotes}\n\n`;
+
+  data.entries.forEach(e => {
+    body += `${entryHeaderText(e)}\n`;
+    const psLine = entryPartSerialLine(e);
+    if (psLine) body += `${psLine}\n`;
+    if (e.notes && e.notes.trim()) body += `\nNotes: ${e.notes.trim()}\n`;
+    body += `\n`;
+  });
+
+  const summaryFields = getSummaryFields(data);
+  if (summaryFields.length) {
+    body += `--- Summary of Calls Answered ---\n`;
+    summaryFields.forEach(([label, val]) => { body += `${label}: ${val}\n`; });
+    body += `\n`;
+  }
+
+  const progFields = getProgrammingFields(data);
+  if (progFields.length) {
+    body += `--- Programming and Projects Updates ---\n`;
+    progFields.forEach(([label, val]) => { body += `${label}: ${val}\n`; });
+    body += `\n`;
+  }
+
+  const withPhotos = data.entries.filter(e => e.photos.length);
+  if (withPhotos.length) {
+    body += `(Images)\n`;
+    withPhotos.forEach(e => {
+      body += `${e.system || entryHeaderText(e)} - ${e.photos.map(p => p.name).join(', ')}\n\n`;
+    });
+  }
+
+  return body;
+}
+
+function buildHtmlBody(data, cidMap) {
+  let html = `<h2>${escapeHtml(data.title)}</h2>`;
+  html += `<p><b>Date:</b> ${escapeHtml(data.date || '(not set)')}<br>`;
+  if (data.systemNumber) html += `<b>System Number:</b> ${escapeHtml(data.systemNumber)}<br>`;
+  html += `<b>Prepared By:</b> ${escapeHtml(data.preparedBy || '(none)')}</p>`;
+  if (data.generalNotes) html += `<p><b>General Notes:</b><br>${escapeHtml(data.generalNotes).replace(/\n/g,'<br>')}</p>`;
+
+  data.entries.forEach(e => {
+    html += `<hr><p style="margin-bottom:4px;"><b>${escapeHtml(entryHeaderText(e))}</b><br>`;
+    const psLine = entryPartSerialLine(e);
+    if (psLine) html += `${escapeHtml(psLine)}<br>`;
+    if (e.notes && e.notes.trim()) html += `<br>Notes: ${escapeHtml(e.notes.trim()).replace(/\n/g,'<br>')}<br>`;
+    html += `</p>`;
+    e.photos.forEach(p => {
+      const cid = cidMap.get(p);
+      html += `<img src="cid:${cid}" style="max-width:300px;margin:4px;border:1px solid #ccc;border-radius:4px;"><br>`;
+    });
+  });
+
+  const summaryFields = getSummaryFields(data);
+  if (summaryFields.length) {
+    html += `<hr><h3>Summary of Calls Answered</h3>`;
+    summaryFields.forEach(([label, val]) => {
+      html += `<p style="margin:4px 0;"><b>${escapeHtml(label)}:</b><br>${escapeHtml(val).replace(/\n/g,'<br>')}</p>`;
+    });
+  }
+
+  const progFields = getProgrammingFields(data);
+  if (progFields.length) {
+    html += `<hr><h3>Programming and Projects Updates</h3>`;
+    progFields.forEach(([label, val]) => {
+      html += `<p style="margin:4px 0;"><b>${escapeHtml(label)}:</b><br>${escapeHtml(val).replace(/\n/g,'<br>')}</p>`;
+    });
+  }
+
+  return html;
+}
+
+function renderPreview() {
+  const data = getReportData();
+  let html = `<h3>${escapeHtml(data.title)}</h3>`;
+  html += `<p><b>Date:</b> ${escapeHtml(data.date || '(not set)')}`;
+  if (data.systemNumber) html += ` &nbsp; <b>System #:</b> ${escapeHtml(data.systemNumber)}`;
+  html += ` &nbsp; <b>By:</b> ${escapeHtml(data.preparedBy || '(none)')}</p>`;
+  if (data.generalNotes) html += `<p><b>General Notes:</b><br>${escapeHtml(data.generalNotes).replace(/\n/g,'<br>')}</p>`;
+  data.entries.forEach(e => {
+    html += `<div class="entry-block"><b>${escapeHtml(entryHeaderText(e))}</b><br>`;
+    const psLine = entryPartSerialLine(e);
+    if (psLine) html += `${escapeHtml(psLine)}<br>`;
+    if (e.notes && e.notes.trim()) html += `<br>Notes: ${escapeHtml(e.notes.trim()).replace(/\n/g,'<br>')}<br>`;
+    e.photos.forEach(p => { html += `<img src="${p.dataUrl}">`; });
+    html += `</div>`;
+  });
+
+  const summaryFields = getSummaryFields(data);
+  if (summaryFields.length) {
+    html += `<div class="entry-block"><b>Summary of Calls Answered</b><br>`;
+    summaryFields.forEach(([label, val]) => {
+      html += `<b>${escapeHtml(label)}:</b> ${escapeHtml(val).replace(/\n/g,'<br>')}<br>`;
+    });
+    html += `</div>`;
+  }
+
+  const progFields = getProgrammingFields(data);
+  if (progFields.length) {
+    html += `<div class="entry-block"><b>Programming and Projects Updates</b><br>`;
+    progFields.forEach(([label, val]) => {
+      html += `<b>${escapeHtml(label)}:</b> ${escapeHtml(val).replace(/\n/g,'<br>')}<br>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('previewContent').innerHTML = html;
+  document.getElementById('previewCard').style.display = 'block';
+  document.getElementById('previewCard').scrollIntoView({behavior:'smooth'});
+}
+
+function setStatus(msg, isErr) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = isErr ? 'err' : 'ok';
+}
+
+function openMailto() {
+  const data = getReportData();
+  const subject = encodeURIComponent(data.title);
+  const body = encodeURIComponent(buildPlainTextBody(data));
+  let url = `mailto:${data.toEmail || ''}?subject=${subject}&body=${body}`;
+  if (data.ccEmail) url += `&cc=${encodeURIComponent(data.ccEmail)}`;
+  window.location.href = url;
+  setStatus('Opened your default mail app (photos not included — mailto: cannot attach files).');
+}
+
+function dataUrlToBase64(dataUrl) {
+  return dataUrl.split(',')[1];
+}
+
+function exportEml() {
+  const data = getReportData();
+  if (data.entries.every(e => e.photos.length === 0) && !data.generalNotes && !data.title) {
+    setStatus('Add some report details first.', true);
+    return;
+  }
+
+  const boundaryMixed = 'mixed_' + Math.random().toString(36).slice(2);
+  const boundaryAlt = 'alt_' + Math.random().toString(36).slice(2);
+
+  const cidMap = new Map();
+  let cidCounter = 0;
+  data.entries.forEach(e => e.photos.forEach(p => {
+    cidCounter++;
+    cidMap.set(p, `photo${cidCounter}@report`);
+  }));
+
+  const plainBody = buildPlainTextBody(data);
+  const htmlBody = buildHtmlBody(data, cidMap);
+
+  let eml = '';
+  eml += `To: ${data.toEmail || ''}\r\n`;
+  if (data.ccEmail) eml += `Cc: ${data.ccEmail}\r\n`;
+  eml += `Subject: ${data.title}\r\n`;
+  eml += `MIME-Version: 1.0\r\n`;
+  eml += `Content-Type: multipart/mixed; boundary="${boundaryMixed}"\r\n\r\n`;
+
+  eml += `--${boundaryMixed}\r\n`;
+  eml += `Content-Type: multipart/alternative; boundary="${boundaryAlt}"\r\n\r\n`;
+
+  eml += `--${boundaryAlt}\r\n`;
+  eml += `Content-Type: text/plain; charset="UTF-8"\r\n`;
+  eml += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+  eml += plainBody + `\r\n\r\n`;
+
+  eml += `--${boundaryAlt}\r\n`;
+  eml += `Content-Type: text/html; charset="UTF-8"\r\n`;
+  eml += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+  eml += `<html><body>${htmlBody}</body></html>\r\n\r\n`;
+  eml += `--${boundaryAlt}--\r\n\r\n`;
+
+  data.entries.forEach(e => {
+    e.photos.forEach(p => {
+      const cid = cidMap.get(p);
+      const base64 = dataUrlToBase64(p.dataUrl);
+      const chunked = base64.match(/.{1,76}/g).join('\r\n');
+      eml += `--${boundaryMixed}\r\n`;
+      eml += `Content-Type: ${p.type || 'image/jpeg'}; name="${p.name}"\r\n`;
+      eml += `Content-Transfer-Encoding: base64\r\n`;
+      eml += `Content-ID: <${cid}>\r\n`;
+      eml += `Content-Disposition: inline; filename="${p.name}"\r\n\r\n`;
+      eml += chunked + `\r\n\r\n`;
+    });
+  });
+
+  eml += `--${boundaryMixed}--\r\n`;
+
+  const blob = new Blob([eml], { type: 'message/rfc822' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeTitle = (data.title || 'report').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+  a.href = url;
+  a.download = `${safeTitle || 'email_report'}.eml`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  setStatus('Exported .eml — double-click the downloaded file to open it in your mail app, then hit Send.');
+}
+
+const STORAGE_KEY = 'shiftReportAutosave';
+let autosaveTimer = null;
+
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosaveNow, 400);
+}
+
+function autosaveNow() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(getReportData()));
+    const ind = document.getElementById('autosaveIndicator');
+    const now = new Date();
+    ind.textContent = `Autosaved ${now.toLocaleTimeString()} — safe to close the app, your data will be here when you reopen it.`;
+  } catch (err) {
+    document.getElementById('autosaveIndicator').textContent = 'Autosave failed: ' + err.message;
+  }
+}
+
+function restoreAutosave() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    document.getElementById('reportTitle').value = data.title || '';
+    document.getElementById('reportDate').value = data.date || '';
+    document.getElementById('systemNumber').value = data.systemNumber || '';
+    document.getElementById('preparedBy').value = data.preparedBy || '';
+    document.getElementById('toEmail').value = data.toEmail || '';
+    document.getElementById('ccEmail').value = data.ccEmail || '';
+    document.getElementById('generalNotes').value = data.generalNotes || '';
+    const s = data.summary || {};
+    document.getElementById('sumWhere').value = s.where || '';
+    document.getElementById('sumWhy').value = s.why || '';
+    document.getElementById('sumIssues').value = s.issues || '';
+    document.getElementById('sumActions').value = s.actions || '';
+    document.getElementById('sumContributing').value = s.contributing || '';
+    document.getElementById('sumContributingFollowup').value = s.contributingFollowup || '';
+    document.getElementById('sumNcrNumber').value = s.ncrNumber || '';
+    document.getElementById('sumOtherDetails').value = s.otherDetails || '';
+    toggleContributingFollowup();
+    const p = data.programming || {};
+    document.getElementById('progWork').value = p.work || '';
+    document.getElementById('progIssues').value = p.issues || '';
+    document.getElementById('progNeeds').value = p.needs || '';
+    document.getElementById('progIdeas').value = p.ideas || '';
+    document.getElementById('progEtc').value = p.etc || '';
+    entries = (data.entries && data.entries.length)
+      ? data.entries.map(e => ({ system: '', description: '', partNumbers: '', serialNumbers: '', notes: '', photos: [], ...e, id: ++entryIdCounter }))
+      : [];
+    renderEntries();
+    return true;
+  } catch (err) {
+    console.error('Restore failed', err);
+    return false;
+  }
+}
+
+function formatDateMMDDYYYY(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${m}/${d}/${y}`;
+}
+
+function autoFillTitle() {
+  const titleInput = document.getElementById('reportTitle');
+  const dateInput = document.getElementById('reportDate');
+  const isAutoPattern = !titleInput.value.trim() || /^Shift Report \d{2}\/\d{2}\/\d{4}$/.test(titleInput.value.trim());
+  if (isAutoPattern) {
+    titleInput.value = `Shift Report ${formatDateMMDDYYYY(dateInput.value)}`;
+  }
+}
+document.getElementById('reportDate').addEventListener('change', autoFillTitle);
+
+function clearAll() {
+  if (!confirm('Clear this report and start a new shift? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('reportTitle').value = '';
+  document.getElementById('systemNumber').value = '';
+  document.getElementById('preparedBy').value = '';
+  document.getElementById('toEmail').value = '';
+  document.getElementById('ccEmail').value = '';
+  document.getElementById('generalNotes').value = '';
+  document.getElementById('sumWhere').value = '';
+  document.getElementById('sumWhy').value = '';
+  document.getElementById('sumIssues').value = '';
+  document.getElementById('sumActions').value = '';
+  document.getElementById('sumContributing').value = '';
+  document.getElementById('sumContributingFollowup').value = '';
+  document.getElementById('sumNcrNumber').value = '';
+  document.getElementById('sumOtherDetails').value = '';
+  toggleContributingFollowup();
+  document.getElementById('progWork').value = '';
+  document.getElementById('progIssues').value = '';
+  document.getElementById('progNeeds').value = '';
+  document.getElementById('progIdeas').value = '';
+  document.getElementById('progEtc').value = '';
+  document.getElementById('reportDate').valueAsDate = new Date();
+  autoFillTitle();
+  entries = [];
+  addEntry();
+  document.getElementById('previewCard').style.display = 'none';
+  setStatus('Started a new shift report.');
+  autosaveNow();
+}
+
+// Autosave on any input/change anywhere in the form
+document.addEventListener('input', scheduleAutosave);
+document.addEventListener('change', scheduleAutosave);
+
+// init: restore whatever was in progress, else start fresh
+const restored = restoreAutosave();
+if (!restored) {
+  document.getElementById('reportDate').valueAsDate = new Date();
+  autoFillTitle();
+  addEntry();
+} else if (entries.length === 0) {
+  addEntry();
+}
+</script>
+</body>
+</html>
