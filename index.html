@@ -186,9 +186,15 @@
   <div style="background:#171a21;border:1px solid #2a2f3a;border-radius:10px;padding:28px;width:100%;max-width:280px;text-align:center;box-sizing:border-box;">
     <div style="font-size:28px;margin-bottom:8px;">🔒</div>
     <div style="font-size:15px;font-weight:600;margin-bottom:14px;color:#e6e8eb;">Shift Report — Locked</div>
-    <input type="password" id="lockPassword" placeholder="Enter password"
-      style="width:100%;background:#1e222b;border:1px solid #2a2f3a;color:#e6e8eb;border-radius:6px;padding:10px 10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;">
-    <button onclick="tryUnlock()" style="width:100%;background:#4f8cff;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">Unlock</button>
+    <form id="lockForm" autocomplete="on" onsubmit="event.preventDefault(); tryUnlock();">
+      <input type="text" name="username" value="shift-report" autocomplete="username" style="display:none;" aria-hidden="true" tabindex="-1">
+      <input type="password" id="lockPassword" name="password" placeholder="Enter password" autocomplete="current-password"
+        style="width:100%;background:#1e222b;border:1px solid #2a2f3a;color:#e6e8eb;border-radius:6px;padding:10px 10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;">
+      <button type="submit" style="width:100%;background:#4f8cff;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">Unlock</button>
+    </form>
+    <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;font-size:12px;color:#9aa1ac;">
+      <input type="checkbox" id="rememberDevice" checked style="margin:0;"> Stay unlocked on this device
+    </label>
     <div id="lockError" style="color:#e5484d;font-size:12px;margin-top:8px;min-height:14px;"></div>
   </div>
 </div>
@@ -309,18 +315,34 @@
   <div class="card">
     <h2>Export</h2>
     <div class="footer-actions">
+      <button class="btn" id="shareBtn" onclick="shareReport()" style="display:none;">📤 Share to Mail</button>
       <button class="btn" onclick="exportEml()">📧 Export Email (.eml, with photos)</button>
       <button class="btn secondary" onclick="openMailto()">✉️ Open in Mail App (text only)</button>
       <button class="btn secondary" onclick="renderPreview()">👁 Preview Report</button>
       <button class="btn secondary" onclick="clearAll()">🗑 Clear / Start New Shift</button>
+      <button class="btn secondary" onclick="lockApp()">🔒 Lock</button>
     </div>
     <div class="hint">
-      The .eml file contains the full report with embedded photos as real attachments. Double-click it to open
-      in Mail, Outlook, or Thunderbird — it opens as a ready-to-send message. "Open in Mail App" uses your
-      system default mail link but cannot attach photos (a mailto: limitation).
+      The .eml file contains the full report with embedded photos as real attachments. "Share to Mail" (when
+      available on your device) opens your normal share sheet so you can hand it straight to Mail — more
+      reliable than opening it via the Files app. Otherwise, download it and open it from Files/Downloads.
+      "Open in Mail App" uses your system default mail link but cannot attach photos (a mailto: limitation).
     </div>
     <div id="status"></div>
     <div id="autosaveIndicator" class="hint" style="margin-top:4px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Backup (recommended each shift)</h2>
+    <div class="footer-actions">
+      <button class="btn secondary" onclick="downloadBackup()">⬇️ Download Backup (.json)</button>
+      <button class="btn secondary" onclick="document.getElementById('restoreFile').click()">⬆️ Restore Backup</button>
+      <input type="file" id="restoreFile" accept="application/json" style="display:none;" onchange="restoreBackupFile(event)">
+    </div>
+    <div class="hint">
+      This saves a real file independent of the browser, in case anything ever clears the app's storage.
+      Download one before you close out for the day; restoring it reloads everything, photos included.
+    </div>
   </div>
 
   <div class="card" id="previewCard" style="display:none;">
@@ -350,7 +372,12 @@ async function tryUnlock() {
   const input = document.getElementById('lockPassword').value;
   const hash = await sha256(input);
   if (hash === PASSWORD_HASH) {
-    sessionStorage.setItem(UNLOCK_KEY, '1');
+    const remember = document.getElementById('rememberDevice').checked;
+    if (remember) {
+      localStorage.setItem(UNLOCK_KEY, '1');
+    } else {
+      sessionStorage.setItem(UNLOCK_KEY, '1');
+    }
     showApp();
   } else {
     document.getElementById('lockError').textContent = 'Incorrect password.';
@@ -362,11 +389,15 @@ function showApp() {
   document.getElementById('appRoot').style.display = 'block';
 }
 
-document.getElementById('lockPassword').addEventListener('keydown', e => {
-  if (e.key === 'Enter') tryUnlock();
-});
+function lockApp() {
+  localStorage.removeItem(UNLOCK_KEY);
+  sessionStorage.removeItem(UNLOCK_KEY);
+  document.getElementById('lockPassword').value = '';
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('lockScreen').style.display = 'flex';
+}
 
-if (sessionStorage.getItem(UNLOCK_KEY) === '1') {
+if (localStorage.getItem(UNLOCK_KEY) === '1' || sessionStorage.getItem(UNLOCK_KEY) === '1') {
   showApp();
 }
 
@@ -720,13 +751,7 @@ function dataUrlToBase64(dataUrl) {
   return dataUrl.split(',')[1];
 }
 
-function exportEml() {
-  const data = getReportData();
-  if (data.entries.every(e => e.photos.length === 0) && !data.generalNotes && !data.title) {
-    setStatus('Add some report details first.', true);
-    return;
-  }
-
+function buildEmlBlob(data) {
   const boundaryMixed = 'mixed_' + Math.random().toString(36).slice(2);
   const boundaryAlt = 'alt_' + Math.random().toString(36).slice(2);
 
@@ -777,18 +802,90 @@ function exportEml() {
 
   eml += `--${boundaryMixed}--\r\n`;
 
+  const safeTitle = (data.title || 'report').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+  const filename = `${safeTitle || 'email_report'}.eml`;
   const blob = new Blob([eml], { type: 'message/rfc822' });
+  return { blob, filename };
+}
+
+function exportEml() {
+  const data = getReportData();
+  if (data.entries.every(e => e.photos.length === 0) && !data.generalNotes && !data.title) {
+    setStatus('Add some report details first.', true);
+    return;
+  }
+  const { blob, filename } = buildEmlBlob(data);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const safeTitle = (data.title || 'report').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
   a.href = url;
-  a.download = `${safeTitle || 'email_report'}.eml`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  setStatus('Exported .eml — double-click the downloaded file to open it in your mail app, then hit Send.');
+  setStatus('Exported .eml — open it from Files/Downloads in your mail app, then hit Send. (Tip: try "Share to Mail" above if available — it\'s usually more reliable.)');
+}
+
+async function shareReport() {
+  const data = getReportData();
+  if (data.entries.every(e => e.photos.length === 0) && !data.generalNotes && !data.title) {
+    setStatus('Add some report details first.', true);
+    return;
+  }
+  try {
+    const { blob, filename } = buildEmlBlob(data);
+    const file = new File([blob], filename, { type: 'message/rfc822' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: data.title });
+      setStatus('Shared — pick Mail from the share sheet to finish sending.');
+    } else {
+      setStatus('Sharing not supported on this device — use Export Email instead.', true);
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') setStatus('Share failed: ' + err.message, true);
+  }
+}
+
+function downloadBackup() {
+  const data = getReportData();
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeTitle = (data.title || 'shift_report').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+  a.href = url;
+  a.download = `${safeTitle || 'shift_report'}_backup.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setStatus('Backup downloaded — keep it somewhere safe (Files, email to yourself, etc).');
+}
+
+function restoreBackupFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      restoreAutosave();
+      setStatus('Backup restored.');
+    } catch (err) {
+      setStatus('Could not read that backup file: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (navigator.share) document.getElementById('shareBtn').style.display = '';
+});
+if (document.readyState !== 'loading' && navigator.share) {
+  document.getElementById('shareBtn').style.display = '';
 }
 
 const STORAGE_KEY = 'shiftReportAutosave';
@@ -801,6 +898,7 @@ function scheduleAutosave() {
 
 function autosaveNow() {
   try {
+    clearTimeout(autosaveTimer);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(getReportData()));
     const ind = document.getElementById('autosaveIndicator');
     const now = new Date();
@@ -809,6 +907,14 @@ function autosaveNow() {
     document.getElementById('autosaveIndicator').textContent = 'Autosave failed: ' + err.message;
   }
 }
+
+// Force an immediate save the instant the app is backgrounded, locked, or switched away from —
+// don't rely on the debounce timer firing, since iOS can pause it before it runs.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) autosaveNow();
+});
+window.addEventListener('pagehide', autosaveNow);
+window.addEventListener('blur', autosaveNow);
 
 function restoreAutosave() {
   try {
