@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#171a21"/>
+  <rect x="16" y="16" width="96" height="96" rx="12" fill="#1e222b" stroke="#2a2f3a" stroke-width="2"/>
+  <!-- clipboard clip -->
+  <rect x="46" y="10" width="36" height="14" rx="4" fill="#4f8cff"/>
+  <!-- document lines -->
+  <rect x="32" y="40" width="64" height="6" rx="3" fill="#4f8cff"/>
+  <rect x="32" y="54" width="64" height="6" rx="3" fill="#3a6fd8"/>
+  <rect x="32" y="68" width="40" height="6" rx="3" fill="#3a6fd8"/>
+  <!-- envelope / send accent -->
+  <path d="M32 92 L64 108 L96 92 L96 84 L64 100 L32 84 Z" fill="#4f8cff"/>
+  <rect x="32" y="82" width="64" height="4" rx="2" fill="#2a2f3a"/>
+</svg>
