@@ -202,7 +202,7 @@
 <div id="appRoot" style="display:none;">
 <div class="container">
   <h1>Shift Report — Email Generator</h1>
-  <div class="sub">Log everything from your shift — collision calls, weld modifications, repairs, and more — attach photos per entry, then export directly to an email you can send.</div>
+  <div class="sub">Log everything from your shift — calls, modifications, repairs, and more — attach photos per entry, then export directly to an email.</div>
 
   <div class="card">
     <h2>Report Details</h2>
@@ -216,7 +216,7 @@
         <input type="date" id="reportDate">
       </div>
       <div class="field">
-        <label>System / Cell Number</label>
+        <label>System ID</label>
         <input type="text" id="systemNumber" placeholder="e.g. RWC-04">
       </div>
       <div class="field">
@@ -263,7 +263,7 @@
       <textarea id="sumActions" placeholder="What was done to resolve it..."></textarea>
     </div>
     <div class="field">
-      <label>Are fab processes or plate conditions contributing to these issues?</label>
+      <label>Are fab processes or material conditions contributing to these issues?</label>
       <select id="sumContributing" onchange="toggleContributingFollowup()">
         <option value="">Select...</option>
         <option value="Yes">Yes</option>
@@ -271,14 +271,14 @@
       </select>
     </div>
     <div class="field" id="contributingFollowupField" style="display:none; padding-left:14px; border-left:2px solid var(--border);">
-      <label>If yes — was this communicated to line leads/supervisors, and an NCR/Weld Report written to document the issue?</label>
+      <label>If yes — was this communicated to line leads/supervisors, and an NCR/Report written to document the issue?</label>
       <select id="sumContributingFollowup">
         <option value="">Select...</option>
         <option value="Yes">Yes</option>
         <option value="No">No</option>
       </select>
       <div class="field" style="margin-top:10px;">
-        <label>NCR / Weld Report # <span style="opacity:.6">(if applicable)</span></label>
+        <label>NCR / Report # <span style="opacity:.6">(if applicable)</span></label>
         <input type="text" id="sumNcrNumber" placeholder="e.g. NCR-4521">
       </div>
     </div>
@@ -307,7 +307,7 @@
       <textarea id="progIdeas" placeholder="Suggestions, ideas, things worth trying..."></textarea>
     </div>
     <div class="field">
-      <label>Etc.</label>
+      <label>Other notes</label>
       <textarea id="progEtc" placeholder="Anything else..."></textarea>
     </div>
   </div>
@@ -318,15 +318,15 @@
       <button class="btn" id="shareBtn" onclick="shareReport()" style="display:none;">📤 Share to Mail</button>
       <button class="btn" onclick="exportEml()">📧 Export Email (.eml, with photos)</button>
       <button class="btn secondary" onclick="openMailto()">✉️ Open in Mail App (text only)</button>
-      <button class="btn secondary" onclick="renderPreview()">👁 Preview Report</button>
+      <button class="btn secondary" onclick="renderPreview()">Preview Report</button>
       <button class="btn secondary" onclick="clearAll()">🗑 Clear / Start New Shift</button>
       <button class="btn secondary" onclick="lockApp()">🔒 Lock</button>
     </div>
     <div class="hint">
-      The .eml file contains the full report with embedded photos as real attachments. "Share to Mail" (when
-      available on your device) opens your normal share sheet so you can hand it straight to Mail — more
+      The .eml file contains the full report with embedded photos as attachments. "Share to Mail" (when
+      available on your device) opens normal share sheet so the report can hand it straight to Mail — more
       reliable than opening it via the Files app. Otherwise, download it and open it from Files/Downloads.
-      "Open in Mail App" uses your system default mail link but cannot attach photos (a mailto: limitation).
+      "Open in Mail App" uses system default mail link but cannot attach photos.
     </div>
     <div id="status"></div>
     <div id="autosaveIndicator" class="hint" style="margin-top:4px;"></div>
@@ -359,7 +359,6 @@
 // the page source can see this is a hash check and could work around it) ---
 const UNLOCK_KEY = 'shiftReportUnlocked';
 // SHA-256 hash of the password. Change PASSWORD_HASH by generating a new hash
-// (see instructions below the file) rather than storing the plaintext here.
 const PASSWORD_HASH = '6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090';
 
 async function sha256(text) {
