@@ -355,7 +355,7 @@
 // --- Simple pass-gate(deterrent only
 // Source sees this hash-
 const UNLOCK_KEY = 'shiftReportUnlocked';
-// SHA-256 hash of the password. Change PASSWORD_HASH by generating a new hash
+// SHA-256 hash
 const PASSWORD_HASH = '6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090';
 
 async function sha256(text) {
@@ -535,7 +535,6 @@ function getReportData() {
   return {
     title: document.getElementById('reportTitle').value || 'Report',
     date: document.getElementById('reportDate').value,
-    systemNumber: document.getElementById('systemNumber').value,
     preparedBy: document.getElementById('preparedBy').value,
     toEmail: document.getElementById('toEmail').value,
     ccEmail: document.getElementById('ccEmail').value,
@@ -613,7 +612,6 @@ function getProgrammingFields(data) {
 function buildPlainTextBody(data) {
   let body = `${data.title}\n`;
   body += `Date: ${data.date || '(not set)'}\n`;
-  if (data.systemNumber) body += `System Number: ${data.systemNumber}\n`;
   body += `Prepared By: ${data.preparedBy || '(none)'}\n\n`;
   if (data.generalNotes) body += `General Notes:\n${data.generalNotes}\n\n`;
 
@@ -653,7 +651,6 @@ function buildPlainTextBody(data) {
 function buildHtmlBody(data, cidMap) {
   let html = `<h2>${escapeHtml(data.title)}</h2>`;
   html += `<p><b>Date:</b> ${escapeHtml(data.date || '(not set)')}<br>`;
-  if (data.systemNumber) html += `<b>System Number:</b> ${escapeHtml(data.systemNumber)}<br>`;
   html += `<b>Prepared By:</b> ${escapeHtml(data.preparedBy || '(none)')}</p>`;
   if (data.generalNotes) html += `<p><b>General Notes:</b><br>${escapeHtml(data.generalNotes).replace(/\n/g,'<br>')}</p>`;
 
@@ -692,7 +689,6 @@ function renderPreview() {
   const data = getReportData();
   let html = `<h3>${escapeHtml(data.title)}</h3>`;
   html += `<p><b>Date:</b> ${escapeHtml(data.date || '(not set)')}`;
-  if (data.systemNumber) html += ` &nbsp; <b>System #:</b> ${escapeHtml(data.systemNumber)}`;
   html += ` &nbsp; <b>By:</b> ${escapeHtml(data.preparedBy || '(none)')}</p>`;
   if (data.generalNotes) html += `<p><b>General Notes:</b><br>${escapeHtml(data.generalNotes).replace(/\n/g,'<br>')}</p>`;
   data.entries.forEach(e => {
@@ -919,7 +915,6 @@ function restoreAutosave() {
     const data = JSON.parse(raw);
     document.getElementById('reportTitle').value = data.title || '';
     document.getElementById('reportDate').value = data.date || '';
-    document.getElementById('systemNumber').value = data.systemNumber || '';
     document.getElementById('preparedBy').value = data.preparedBy || '';
     document.getElementById('toEmail').value = data.toEmail || '';
     document.getElementById('ccEmail').value = data.ccEmail || '';
@@ -971,7 +966,6 @@ function clearAll() {
   if (!confirm('Clear this report and start a new shift? This cannot be undone.')) return;
   localStorage.removeItem(STORAGE_KEY);
   document.getElementById('reportTitle').value = '';
-  document.getElementById('systemNumber').value = '';
   document.getElementById('preparedBy').value = '';
   document.getElementById('toEmail').value = '';
   document.getElementById('ccEmail').value = '';
