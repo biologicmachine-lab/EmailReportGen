@@ -69,7 +69,7 @@
     margin-bottom: 4px;
   }
   input[type=text], input[type=date], input[type=password], textarea, select {
-    width: 100%;
+    width: 90%;
     max-width: 100%;
     background: var(--panel2);
     border: 1px solid var(--border);
@@ -203,13 +203,13 @@
 <div class="container">
   <h1>Shift Report — Email Generator</h1>
   <div class="sub"><i><Log everything from your shift<br>Calls, modifications, repairs, and more — attach photos per entry, then export directly to an email.</i></div>
-
+  <!--Email data--->
   <div class="card">
     <h2>Report Details</h2>
     <div class="grid">
       <div class="field">
         <label>Report Title / Subject</label>
-        <input type="text" id="reportTitle" placeholder="e.g. Robotic Weld Cell #4 — Repair Report">
+        <input type="text" id="reportTitle" placeholder="Shift Report">
       </div>
       <div class="field">
         <label>Date</label>
@@ -229,7 +229,7 @@
       </div>
     </div>
   </div>
-
+  <!--Entry fields-->
   <div class="card">
     <h2>Entries</h2>
     <div id="entriesContainer"></div>
@@ -270,7 +270,7 @@
         <option value="No">No</option>
       </select>
       <div class="field" style="margin-top:10px;">
-        <label>NCR / Report # <span style="opacity:.6">(if applicable)</span></label>
+        <label>Report # <span style="opacity:.6">(if applicable)</span></label>
         <input type="text" id="sumNcrNumber" placeholder="e.g. NCR-4521">
       </div>
     </div>
@@ -283,7 +283,7 @@
       <textarea id="generalNotes" placeholder="Overall summary or context for this report..."></textarea>
     </div>
   </div>
-
+  <!--Updates & Projects fields-->
   <div class="card">
     <h2>Programming and Projects Updates</h2>
     <div class="field">
@@ -307,7 +307,7 @@
       <textarea id="progEtc" placeholder="Anything else..."></textarea>
     </div>
   </div>
-
+  <!--Export & Handling-->
   <div class="card">
     <h2>Export</h2>
     <div class="footer-actions">
@@ -318,6 +318,7 @@
       <button class="btn secondary" onclick="clearAll()">🗑 Clear / Start New Shift</button>
       <button class="btn secondary" onclick="lockApp()">🔒 Lock</button>
     </div>
+    <!--Help note-->
     <div class="hint">
       The .eml file contains the full report with embedded photos as attachments. "Share to Mail" (when
       available on your device) opens normal share sheet so the report can hand it straight to Mail — more
@@ -327,7 +328,7 @@
     <div id="status"></div>
     <div id="autosaveIndicator" class="hint" style="margin-top:4px;"></div>
   </div>
-
+  <!--Backups handling-->
   <div class="card">
     <h2>Backup (recommended each shift)</h2>
     <div class="footer-actions">
@@ -340,7 +341,7 @@
       Download one before you close out for the day; restoring it reloads everything, photos included.
     </div>
   </div>
-
+  <!--Preview-->
   <div class="card" id="previewCard" style="display:none;">
     <h2>Preview</h2>
     <div class="preview" id="previewContent"></div>
@@ -351,8 +352,8 @@
 <input type="file" id="fileInput" accept="image/*" multiple>
 
 <script>
-// --- Simple password gate (deterrent only, not real security — anyone who views
-// the page source can see this is a hash check and could work around it) ---
+// --- Simple pass-gate(deterrent only
+// Source sees this hash-
 const UNLOCK_KEY = 'shiftReportUnlocked';
 // SHA-256 hash of the password. Change PASSWORD_HASH by generating a new hash
 const PASSWORD_HASH = '6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090';
@@ -481,12 +482,12 @@ function renderEntries() {
       <div class="grid">
         <div class="field">
           <label>System</label>
-          <input type="text" value="${escapeAttr(e.system)}" placeholder="e.g. T2, M2"
+          <input type="text" value="${escapeAttr(e.system)}" placeholder="System ID"
             oninput="updateEntryField(${e.id}, 'system', this.value); refreshEntryHeader(${e.id});">
         </div>
         <div class="field">
           <label>Description</label>
-          <input type="text" value="${escapeAttr(e.description)}" placeholder="e.g. Miss sensing issue due to cover lid being pulled"
+          <input type="text" value="${escapeAttr(e.description)}" placeholder="Describe..."
             oninput="updateEntryField(${e.id}, 'description', this.value)">
         </div>
         <div class="field">
